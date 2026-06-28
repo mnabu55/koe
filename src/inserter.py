@@ -25,8 +25,11 @@ class TextInserter:
                 ],
                 check=True,
                 capture_output=True,
+                text=True,
             )
             log.debug("text_inserted", length=len(text))
+        except subprocess.CalledProcessError as e:
+            log.error("insert_failed", return_code=e.returncode, stderr=e.stderr)
         except Exception as e:
             log.error("insert_failed", error=str(e))
         finally:
