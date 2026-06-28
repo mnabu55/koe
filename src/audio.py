@@ -30,10 +30,12 @@ class AudioCapture:
         log.debug("audio_capture_started")
 
     def stop(self) -> np.ndarray:
-        if self._stream:
-            self._stream.stop()
-            self._stream.close()
+        with self._lock:
+            stream = self._stream
             self._stream = None
+        if stream:
+            stream.stop()
+            stream.close()
         with self._lock:
             if not self._buffer:
                 return np.array([], dtype=DTYPE)
@@ -51,5 +53,6 @@ class AudioCapture:
     ) -> None:
         if status:
             log.warning("audio_callback_status", status=str(status))
+            return
         with self._lock:
             self._buffer.append(indata.copy())
