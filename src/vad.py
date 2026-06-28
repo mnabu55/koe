@@ -10,12 +10,16 @@ SAMPLE_RATE = 16000
 class VAD:
     def __init__(self, threshold: float = 0.5) -> None:
         self._threshold = threshold
-        model, utils = torch.hub.load(
-            repo_or_dir="snakers4/silero-vad",
-            model="silero_vad",
-            force_reload=False,
-            trust_repo=True,
-        )
+        try:
+            model, utils = torch.hub.load(
+                repo_or_dir="snakers4/silero-vad",
+                model="silero_vad",
+                force_reload=False,
+                trust_repo=True,
+            )
+        except Exception as e:
+            log.error("vad_model_load_failed", error=str(e))
+            raise
         self._model = model
         self._model.eval()
         self._get_speech_timestamps = utils[0]
@@ -48,6 +52,7 @@ class VAD:
             threshold=self._threshold,
         )
         if not timestamps:
+            log.debug("vad_trim_no_speech")
             return audio
         start = timestamps[0]["start"]
         end = timestamps[-1]["end"]
