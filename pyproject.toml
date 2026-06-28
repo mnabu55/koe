@@ -1,0 +1,36 @@
+[project]
+name = "aquavoice"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "sounddevice>=0.5.1",
+    "numpy>=2.0",
+    "mlx-whisper>=0.4.0",
+    "torch>=2.3.0",
+    "torchaudio>=2.3.0",
+    "ollama>=0.5.0",
+    "rumps>=0.4.0",
+    "pynput>=1.7.7",
+    "pyperclip>=1.9.0",
+    "python-dotenv>=1.0.0",
+    "structlog>=24.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.12",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+aquavoice = "src.app:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
