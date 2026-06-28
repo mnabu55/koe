@@ -16,12 +16,19 @@ class STT:
         if len(audio) == 0:
             return ""
         log.debug("stt_transcribing", samples=len(audio))
-        result = mlx_whisper.transcribe(
-            audio,
-            path_or_hf_repo=self._model,
-            language=language,
-            task="transcribe",
-        )
-        text: str = result["text"].strip()
-        log.debug("stt_result", text=text[:80])
+        try:
+            result = mlx_whisper.transcribe(
+                audio,
+                path_or_hf_repo=self._model,
+                language=language,
+                task="transcribe",
+            )
+            text: str = result["text"].strip()
+        except Exception as e:
+            log.error("stt_transcription_failed", error=str(e))
+            return ""
+        if not text:
+            log.debug("stt_result_empty")
+        else:
+            log.debug("stt_result", text=text[:80])
         return text
