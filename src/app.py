@@ -1,4 +1,5 @@
 """AquaVoice: On-device macOS voice dictation application."""
+import queue
 import threading
 import rumps
 import structlog
@@ -21,6 +22,7 @@ class AquaVoiceApp(rumps.App):
         self._pipeline: Pipeline | None = None
         self._hotkey: HotkeyManager | None = None
         self._enabled = True
+        self._title_queue: queue.Queue[str] = queue.Queue()
 
         self._llm_item = rumps.MenuItem(
             f"LLM: {'ON' if config.llm_cleanup_enabled else 'OFF'}"
@@ -33,7 +35,17 @@ class AquaVoiceApp(rumps.App):
             rumps.MenuItem("Quit", callback=self._on_quit),
         ]
 
-    @rumps.clicked("Quit")
+    @rumps.timer(0.05)
+    def _flush_title(self, _: object) -> None:
+        try:
+            while True:
+                self.title = self._title_queue.get_nowait()
+        except queue.Empty:
+            pass
+
+    def _set_title(self, title: str) -> None:
+        self._title_queue.put(title)
+
     def _on_quit(self, _: rumps.MenuItem | None = None) -> None:
         log.debug("app_quit")
         if self._hotkey:
@@ -52,22 +64,22 @@ class AquaVoiceApp(rumps.App):
             log.debug("app_initialized")
         except Exception as e:
             log.error("app_init_failed", error=str(e))
-            self.title = "❌"
+            self._set_title("❌")
 
     def _on_hotkey_press(self) -> None:
         if not self._enabled or not self._pipeline:
             return
-        self.title = ICON_RECORDING
+        self._set_title(ICON_RECORDING)
         self._pipeline.start()
 
     def _on_hotkey_release(self) -> None:
-        if not self._pipeline:
+        if not self._enabled or not self._pipeline:
             return
-        self.title = ICON_PROCESSING
+        self._set_title(ICON_PROCESSING)
         try:
             self._pipeline.stop()
         finally:
-            self.title = ICON_IDLE
+            self._set_title(ICON_IDLE)
 
     def run(self) -> None:
         threading.Thread(target=self._initialize, daemon=True).start()
