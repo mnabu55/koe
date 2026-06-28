@@ -18,11 +18,16 @@ class HotkeyManager:
         self._hotkey = hotkey
         self._held = False
         self._held_lock = threading.Lock()
+        self._pressed: set[str] = set()
         self._listener: keyboard.Listener | None = None
         log.debug("hotkey_manager_initialized", hotkey=hotkey)
 
     def start(self) -> None:
+        self.stop()
         keys = self._parse_hotkey(self._hotkey)
+        with self._held_lock:
+            self._pressed.clear()
+            self._held = False
         self._listener = keyboard.Listener(
             on_press=self._make_press_handler(keys),
             on_release=self._make_release_handler(keys),
@@ -31,42 +36,41 @@ class HotkeyManager:
         log.debug("hotkey_manager_started")
 
     def stop(self) -> None:
-        if self._listener:
-            self._listener.stop()
+        with self._held_lock:
+            listener = self._listener
             self._listener = None
+        if listener:
+            listener.stop()
         log.debug("hotkey_manager_stopped")
 
     def _parse_hotkey(self, hotkey: str) -> set[str]:
         return set(hotkey.lower().split("+"))
 
     def _make_press_handler(self, keys: set[str]) -> Callable:
-        pressed: set[str] = set()
-
         def on_press(key: keyboard.Key | keyboard.KeyCode) -> None:
-            pressed.add(self._key_name(key))
-            if keys <= pressed:
-                with self._held_lock:
-                    if not self._held:
-                        self._held = True
-                        log.debug("hotkey_pressed")
-                        threading.Thread(
-                            target=self._on_press, daemon=True
-                        ).start()
+            should_fire = False
+            with self._held_lock:
+                self._pressed.add(self._key_name(key))
+                if keys <= self._pressed and not self._held:
+                    self._held = True
+                    should_fire = True
+            if should_fire:
+                log.debug("hotkey_pressed")
+                threading.Thread(target=self._on_press, daemon=True).start()
 
         return on_press
 
     def _make_release_handler(self, keys: set[str]) -> Callable:
-        pressed: set[str] = set()
-
         def on_release(key: keyboard.Key | keyboard.KeyCode) -> None:
-            pressed.discard(self._key_name(key))
+            should_fire = False
             with self._held_lock:
-                if self._held and not keys <= pressed:
+                self._pressed.discard(self._key_name(key))
+                if self._held and not keys <= self._pressed:
                     self._held = False
-                    log.debug("hotkey_released")
-                    threading.Thread(
-                        target=self._on_release, daemon=True
-                    ).start()
+                    should_fire = True
+            if should_fire:
+                log.debug("hotkey_released")
+                threading.Thread(target=self._on_release, daemon=True).start()
 
         return on_release
 
