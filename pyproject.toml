@@ -1,5 +1,5 @@
 [project]
-name = "aquavoice"
+name = "koe"
 version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = [
@@ -27,10 +27,16 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-aquavoice = "src.app:main"
+koe = "src.app:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-mock>=3.15.1",
+]

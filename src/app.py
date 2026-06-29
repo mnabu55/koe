@@ -1,4 +1,4 @@
-"""AquaVoice: On-device macOS voice dictation application."""
+"""Koe: On-device macOS voice dictation application."""
 import queue
 import threading
 import rumps
@@ -15,7 +15,7 @@ ICON_RECORDING = "🔴"
 ICON_PROCESSING = "⏳"
 
 
-class AquaVoiceApp(rumps.App):
+class KoeApp(rumps.App):
     def __init__(self, config: Config) -> None:
         super().__init__(ICON_IDLE, quit_button=None)
         self._config = config
@@ -88,5 +88,5 @@ class AquaVoiceApp(rumps.App):
 
 def main() -> None:
     config = Config()
-    app = AquaVoiceApp(config=config)
+    app = KoeApp(config=config)
     app.run()
