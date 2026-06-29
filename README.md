@@ -1,136 +1,136 @@
 # Koe 🎤
 
-オンデバイス音声入力アプリ for macOS（Apple Silicon）
+On-device voice dictation app for macOS (Apple Silicon)
 
-ホットキーを押している間マイクで録音し、離した瞬間に音声をテキストに変換してアクティブなアプリへ自動入力します。すべての処理はローカルで完結します。
+Hold the hotkey to record, release to transcribe — text is instantly inserted into any active app. Everything runs locally on your machine.
 
-## デモ
+**[日本語版 README はこちら](README.ja.md)**
+
+## Demo
 
 ![demo](docs/demo.gif)
 
-## 特徴
+## Features
 
-- **完全オンデバイス** — 音声データは外部に送信されません
-- **Apple Silicon 最適化** — mlx-whisper が ANE/GPU を活用した高速推論
-- **日本語対応** — Whisper large-v3-turbo による高精度な日本語認識
-- **AI 文章整形** — Ollama (qwen2.5:7b) によるフィラー語除去・句読点補完
-- **Push-to-Talk** — ホットキーを押している間だけ録音
-- **どのアプリにも挿入** — クリップボード経由で任意のテキストフィールドに入力
+- **Fully on-device** — your voice never leaves your machine
+- **Apple Silicon optimized** — mlx-whisper leverages ANE/GPU for fast inference
+- **Japanese support** — high-accuracy transcription with Whisper large-v3-turbo
+- **AI text cleanup** — Ollama (qwen2.5:7b) removes filler words and adds punctuation
+- **Push-to-Talk** — records only while the hotkey is held
+- **Works in any app** — inserts text via clipboard into any text field
 
-## 動作環境
+## Requirements
 
-- macOS 13 以上
+- macOS 13 or later
 - Apple Silicon (M1 / M2 / M3 / M4)
-- Python 3.11 以上
-- [uv](https://docs.astral.sh/uv/) パッケージマネージャー
-- [Ollama](https://ollama.com/)（LLM による文章整形を使う場合）
+- Python 3.11 or later
+- [uv](https://docs.astral.sh/uv/) package manager
+- [Ollama](https://ollama.com/) (optional, for AI text cleanup)
 
-## セットアップ
+## Setup
 
-### 1. リポジトリをクローン
+### 1. Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/koe.git
+git clone https://github.com/mnabu55/koe.git
 cd koe
 ```
 
-### 2. 依存パッケージをインストール
+### 2. Install dependencies
 
 ```bash
 uv sync
 ```
 
-### 3. Whisper モデルをダウンロード
+### 3. Download the Whisper model
 
 ```bash
-mkdir -p ~/ai_workspace/models
+mkdir -p ~/models/whisper-large-v3-turbo
 
 curl -L "https://huggingface.co/mlx-community/whisper-large-v3-turbo/resolve/main/weights.safetensors" \
-  -o ~/ai_workspace/models/whisper-large-v3-turbo/weights.safetensors --progress-bar
+  -o ~/models/whisper-large-v3-turbo/weights.safetensors --progress-bar
 
 curl -L "https://huggingface.co/mlx-community/whisper-large-v3-turbo/resolve/main/config.json" \
-  -o ~/ai_workspace/models/whisper-large-v3-turbo/config.json
+  -o ~/models/whisper-large-v3-turbo/config.json
 ```
 
-### 4. Ollama をセットアップ（オプション）
+### 4. Set up Ollama (optional)
 
 ```bash
-# Ollama インストール: https://ollama.com/
+# Install Ollama: https://ollama.com/
 ollama pull qwen2.5:7b
 ```
 
-### 5. 設定ファイルを作成
+### 5. Create configuration file
 
 ```bash
 cp .env.example .env
 ```
 
-`.env` を編集:
+Edit `.env`:
 
 ```env
-WHISPER_MODEL=/Users/YOUR_USERNAME/ai_workspace/models/whisper-large-v3-turbo
+WHISPER_MODEL=/Users/YOUR_USERNAME/models/whisper-large-v3-turbo
 WHISPER_LANGUAGE=ja
 OLLAMA_MODEL=qwen2.5:7b
 LLM_CLEANUP_ENABLED=true
 HOTKEY=ctrl+shift+space
 ```
 
-### 6. アクセシビリティ権限を付与
+### 6. Grant Accessibility permission
 
-**システム設定 → プライバシーとセキュリティ → アクセシビリティ** で、使用するターミナルアプリを追加してオンにします。
+Go to **System Settings → Privacy & Security → Accessibility** and add your terminal app.
 
-## 起動
+## Usage
 
 ```bash
 uv run koe
 ```
 
-メニューバーに 🎤 が表示されれば起動完了です。
+A 🎤 icon will appear in the menu bar when the app is ready.
 
-## 使い方
+1. Place your cursor in any text field
+2. **Hold the hotkey** and speak (`ctrl+shift+space` by default)
+3. **Release the hotkey** → transcribed text is inserted automatically
 
-1. テキストを入力したいフィールドにカーソルを置く
-2. **ホットキーを押しながら話す**（デフォルト: `ctrl+shift+space`）
-3. **ホットキーを離す** → テキストが自動挿入される
+### Icon states
 
-### アイコンの意味
+| Icon | State      |
+| ---- | ---------- |
+| 🎤   | Idle       |
+| 🔴   | Recording  |
+| ⏳   | Processing |
 
-| アイコン | 状態 |
-|---------|------|
-| 🎤 | 待機中 |
-| 🔴 | 録音中 |
-| ⏳ | 処理中 |
+## Configuration
 
-## 設定
+Customize behavior via the `.env` file:
 
-`.env` ファイルで動作をカスタマイズできます。
+| Key                   | Default                                | Description                     |
+| --------------------- | -------------------------------------- | ------------------------------- |
+| `WHISPER_MODEL`       | `mlx-community/whisper-large-v3-turbo` | Model path or HuggingFace repo  |
+| `WHISPER_LANGUAGE`    | `ja`                                   | Recognition language            |
+| `OLLAMA_MODEL`        | `qwen2.5:7b`                           | LLM for text cleanup            |
+| `LLM_CLEANUP_ENABLED` | `true`                                 | Enable/disable AI text cleanup  |
+| `HOTKEY`              | `ctrl+shift+space`                     | Recording hotkey                |
 
-| 項目 | デフォルト | 説明 |
-|------|-----------|------|
-| `WHISPER_MODEL` | `mlx-community/whisper-large-v3-turbo` | Whisper モデルのパスまたは HuggingFace リポジトリ |
-| `WHISPER_LANGUAGE` | `ja` | 認識言語 |
-| `OLLAMA_MODEL` | `qwen2.5:7b` | 文章整形に使用する LLM |
-| `LLM_CLEANUP_ENABLED` | `true` | フィラー語除去・句読点補完の有効/無効 |
-| `HOTKEY` | `ctrl+shift+space` | 録音ホットキー |
-
-## アーキテクチャ
+## Architecture
 
 ```
-ホットキー押下
+Hotkey pressed
     ↓
 AudioCapture (sounddevice, 16kHz)
     ↓
-Silero VAD (無音スキップ)
+Silero VAD (skip silence)
     ↓
-mlx-whisper (音声 → テキスト)
+mlx-whisper (audio → text)
     ↓
-Ollama LLM (文章整形) ※オプション
+Ollama LLM (text cleanup) — optional
     ↓
-TextInserter (クリップボード → Cmd+V)
+TextInserter (clipboard → Cmd+V)
     ↓
-アクティブアプリのテキストフィールド
+Active app text field
 ```
 
-## ライセンス
+## License
 
 MIT
